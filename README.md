@@ -41,7 +41,7 @@ flowchart LR
   Gateway --> Bank[Bank API]
   Gateway --> DB[(PostgreSQL)]
   Gateway --> Ledger[Ledger webhook]
-  Gateway --> Metrics[/metrics Prometheus]
+  Gateway --> Metrics[metrics Prometheus]
 ```
 
 ## Risk model (business view)
