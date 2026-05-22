@@ -1,0 +1,87 @@
+{
+  "title": "Gerald BNPL - Approvals, Risk & Reliability (7d)",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Approval Rate (1h)",
+        "description": "Share of decisions approved. Sudden drops may indicate bank outages, scoring bugs, or cohort quality shifts.",
+        "requests": [
+          {
+            "q": "sum:gerald.approved{*}.rollup(sum,3600)/(sum:gerald.approved{*}.rollup(sum,3600)+sum:gerald.declined{*}.rollup(sum,3600))"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Decisions by Outcome",
+        "description": "Volume of approved vs declined decisions — ties directly to marketplace GMV opportunity.",
+        "requests": [
+          { "q": "sum:gerald.approved{*}.as_count()" },
+          { "q": "sum:gerald.declined{*}.as_count()" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Credit Limit Buckets",
+        "description": "Distribution of assigned limits; shift toward $0/$100 signals risk tightening or worse user quality.",
+        "requests": [
+          { "q": "sum:gerald.credit_limit.bucket{*} by {bucket}" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Decision Latency p50 / p95",
+        "description": "End-to-end POST /v1/decision latency including bank fetch.",
+        "requests": [
+          {
+            "q": "avg:service.gerald_gateway.request_duration.seconds{endpoint:/v1/decision}.rollup(avg,300)"
+          },
+          {
+            "q": "p95:service.gerald_gateway.request_duration.seconds{endpoint:/v1/decision}"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Error Rate %",
+        "description": "5xx and dependency failures — spikes here can masquerade as approval-rate drops.",
+        "requests": [
+          {
+            "q": "100*(sum:service.gerald_gateway.errors{*}.as_count()/sum:service.gerald_gateway.requests{*}.as_count())"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Webhook Latency (p50/p95)",
+        "description": "Ledger notification lag; high p95 delays settlement reconciliation.",
+        "requests": [
+          { "q": "avg:webhook.latency.seconds{*}.rollup(avg,300)" },
+          { "q": "p95:webhook.latency.seconds{*}" }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Bank Fetch Failures",
+        "description": "Upstream bank API errors — investigate before blaming risk model for approval drops.",
+        "requests": [
+          { "q": "sum:bank.fetch.failures{*}.as_count()" }
+        ]
+      }
+    }
+  ]
+}

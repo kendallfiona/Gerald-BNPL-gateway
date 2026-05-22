@@ -1,0 +1,66 @@
+services:
+  bank:
+    build:
+      context: ./mock/bank_server
+      dockerfile: Dockerfile
+    container_name: mock-bank
+    environment:
+      BANK_STUB_DIR: /bank_stub
+    volumes:
+      - ./bank_stub:/bank_stub:ro
+    ports: ["8001:8000"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\"",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+  ledger:
+    build:
+      context: ./mock/ledger_server
+      dockerfile: Dockerfile
+    container_name: mock-ledger
+    ports: ["8002:8000"]
+  postgres:
+    image: postgres:16-alpine
+    container_name: gerald-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gerald
+    ports: ["5433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gerald"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+  gateway:
+    build:
+      context: ./gerald-gateway
+      dockerfile: Dockerfile
+    container_name: gerald-gateway
+    depends_on:
+      bank:
+        condition: service_healthy
+      ledger:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/gerald
+      BANK_API_BASE: http://bank:8000
+      LEDGER_WEBHOOK_URL: http://ledger:8000/mock-ledger
+      SERVICE_NAME: gerald-gateway
+    ports: ["8080:8080"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+volumes:
+  pgdata:

@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: Gerald BNPL Decision Service
+  version: "0.1.0"
+paths:
+  /v1/decision:
+    post:
+      summary: Make a BNPL decision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, amount_cents_requested]
+              properties:
+                user_id: { type: string }
+                amount_cents_requested: { type: integer }
+      responses:
+        "200":
+          description: Decision
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  approved: { type: boolean }
+                  credit_limit_cents: { type: integer }
+                  amount_granted_cents: { type: integer }
+                  plan_id: { type: string }
+  /v1/plan/{plan_id}:
+    get:
+      summary: Fetch repayment plan
+      parameters:
+        - in: path
+          name: plan_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Plan
+  /v1/decision/history:
+    get:
+      summary: Decision history for user
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: History

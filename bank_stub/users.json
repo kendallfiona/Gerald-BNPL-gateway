@@ -1,0 +1,17 @@
+{
+  "user_good": {
+    "user_id": "user_good"
+  },
+  "user_overdraft": {
+    "user_id": "user_overdraft"
+  },
+  "user_thin": {
+    "user_id": "user_thin"
+  },
+  "user_gig": {
+    "user_id": "user_gig"
+  },
+  "user_highutil": {
+    "user_id": "user_highutil"
+  }
+}
